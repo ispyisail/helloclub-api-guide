@@ -12,7 +12,7 @@ import pytest
 
 from helloclub.client import HelloClubClient, V1_BASE_URL
 from helloclub.exceptions import HelloClubError, RateLimitError
-from tests.conftest import make_response, patch_http
+from tests.helpers import make_response, patch_http
 
 
 # ---------------------------------------------------------------------------
