@@ -1,5 +1,7 @@
 # Hello Club API Guide
 
+[![CI](https://github.com/ispyisail/helloclub-api-guide/actions/workflows/ci.yml/badge.svg)](https://github.com/ispyisail/helloclub-api-guide/actions/workflows/ci.yml)
+
 > **Tested against live API — Feb 2026** | API spec version: 2021-08-30 | ~40% of returned fields are undocumented in the official spec
 
 ## V2 Migration Notice
