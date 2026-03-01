@@ -14,19 +14,27 @@ Hello Club is migrating to a **V2 API** (`api-v2.helloclub.com`). Endpoints beco
 
 The official OpenAPI spec (2021-08-30) is significantly out of date. This guide documents what the API **actually returns** based on live testing against a production club with 2,137 members and 971 events.
 
+## Requirements
+
+- Python 3.10+
+- [httpx](https://www.python-httpx.org/)
+
 ## Quickstart
 
 ```python
+import os
 import httpx
 
-client = httpx.Client(
-    base_url="https://api.helloclub.com",
-    headers={"X-Api-Key": "your-api-key-here"},
-)
+API_KEY = os.environ["HELLOCLUB_API_KEY"]
 
-events = client.get("/event", params={"limit": 10}).json()
-for event in events["events"]:
-    print(f"{event['name']} — {event['startDate']}")
+with httpx.Client(
+    base_url="https://api.helloclub.com",
+    headers={"X-Api-Key": API_KEY},
+) as client:
+    data = client.get("/event", params={"limit": 10, "sort": "startDate"}).json()
+
+for event in data.get("events", []):
+    print(f"{event['name']} — {event['startDate'][:10]}")
 ```
 
 Set your API key as an environment variable:

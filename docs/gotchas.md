@@ -13,11 +13,13 @@ from datetime import datetime, timedelta, timezone
 
 now = datetime.now(timezone.utc)
 events = client.get("/event", params={
-    "fromDate": now.isoformat(),
-    "toDate": (now + timedelta(days=30)).isoformat(),
+    "fromDate": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "toDate": (now + timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "sort": "startDate",
 })
 ```
+
+> **Note:** Use `strftime("%Y-%m-%dT%H:%M:%SZ")` rather than `isoformat()`. Python's `isoformat()` includes microseconds and `+00:00` offset which the API may not accept.
 
 ## Date-Required Endpoints (Spec Says Optional)
 

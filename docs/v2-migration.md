@@ -46,6 +46,21 @@ Field and entity naming changes throughout the API:
 | `membership` | `membershipType` | What V1 calls "membership types" |
 | `subscription` | `membership` | What V1 calls "subscriptions" on members |
 
+## Response Wrapper Key Changes
+
+Since entity names change, the JSON wrapper keys in list responses likely change too:
+
+| V1 wrapper key | V2 wrapper key (expected) |
+|---|---|
+| `"events"` | `"events"` (unchanged) |
+| `"members"` | `"profiles"` |
+| `"attendees"` | `"eventAttendees"` |
+| `"memberships"` | `"membershipTypes"` |
+| `"transactions"` | `"transactions"` (unchanged) |
+| `"bookings"` | `"bookings"` (unchanged) |
+
+> **Note:** These wrapper key changes are inferred from the terminology renames. Test against the V2 API after your club portal is upgraded to confirm the exact keys.
+
 ## Profile Creation Change
 
 When creating profiles (members) in V2, a new `type` property is required:

@@ -7,9 +7,10 @@ Usage:
     python examples/rate_limit_handler.py
 """
 
+from __future__ import annotations
+
 import os
 import time
-from datetime import datetime, timezone
 
 import httpx
 
@@ -31,6 +32,7 @@ def request_with_retry(
     - 4xx (client error): Raise immediately (no retry)
     """
     url = f"{BASE_URL}{path}"
+    last_exc: Exception | None = None
 
     for attempt in range(max_retries):
         try:
@@ -39,7 +41,6 @@ def request_with_retry(
 
             # Rate limit — wait and retry
             if resp.status_code == 429:
-                # V2 API provides Retry-After header (seconds to wait)
                 retry_after = resp.headers.get("Retry-After")
                 if retry_after:
                     wait = int(retry_after)
@@ -51,23 +52,33 @@ def request_with_retry(
                 if attempt < max_retries - 1:
                     time.sleep(wait)
                     continue
+                raise RuntimeError(
+                    f"Rate limit exceeded after {max_retries} retries "
+                    f"(30 req/min). Try spacing requests further apart."
+                )
 
-            resp.raise_for_status()
+            # Client errors (4xx) — raise immediately, no retry
+            if 400 <= resp.status_code < 500:
+                resp.raise_for_status()
+
+            # Server errors (5xx) — retry with backoff
+            if resp.status_code >= 500:
+                last_exc = httpx.HTTPStatusError(
+                    f"Server error {resp.status_code}",
+                    request=resp.request,
+                    response=resp,
+                )
+                if attempt < max_retries - 1:
+                    wait = 2 ** (attempt + 1)
+                    print(f"  Server error {resp.status_code}. Retrying in {wait}s...")
+                    time.sleep(wait)
+                    continue
+                resp.raise_for_status()
+
             return resp
 
-        except httpx.HTTPStatusError as exc:
-            if exc.response.status_code < 500:
-                # Client errors (4xx) — don't retry
-                raise
-            # Server errors (5xx) — retry with backoff
-            if attempt < max_retries - 1:
-                wait = 2 ** (attempt + 1)
-                print(f"  Server error {exc.response.status_code}. Retrying in {wait}s...")
-                time.sleep(wait)
-            else:
-                raise
-
         except httpx.RequestError as exc:
+            last_exc = exc
             if attempt < max_retries - 1:
                 wait = 2 ** (attempt + 1)
                 print(f"  Connection error. Retrying in {wait}s...")
@@ -75,7 +86,7 @@ def request_with_retry(
             else:
                 raise
 
-    raise RuntimeError(f"Failed after {max_retries} attempts")
+    raise RuntimeError(f"Failed after {max_retries} attempts: {last_exc}")
 
 
 if __name__ == "__main__":

@@ -52,6 +52,24 @@
 | GET | `/checkInLog` | **Working** | 2 (365d) | Requires fromDate + toDate (spec says optional) |
 | GET | `/emailLog` | **Working** | 8,895 (90d) | Requires fromDate + toDate (spec says optional) |
 
+### `GET /user/me` Response
+
+Returns info about the authenticated API key holder. Useful for verifying your API key and getting your club ID:
+
+```json
+{
+  "id": "usr-abc123",
+  "club": "5cf83f5627b7240004667ef1",
+  "firstName": "Admin",
+  "lastName": "User",
+  "email": "admin@example.com",
+  "roles": ["admin"],
+  "locale": "en"
+}
+```
+
+Key fields: `id`, `club` (your club's ObjectId), `firstName`, `lastName`, `email`, `roles`, `locale`.
+
 ## Common Query Parameters
 
 These parameters are supported across most GET list endpoints:

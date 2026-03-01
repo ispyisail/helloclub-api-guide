@@ -58,8 +58,10 @@ def request_with_retry(client, method, url, max_retries=3, **kwargs):
             else:
                 wait = 2 ** (attempt + 1)  # 2, 4, 8 seconds
             print(f"Rate limited. Waiting {wait}s...")
-            time.sleep(wait)
-            continue
+            if attempt < max_retries - 1:
+                time.sleep(wait)
+                continue
+            raise Exception("Rate limit exceeded after all retries")
 
         response.raise_for_status()
         return response

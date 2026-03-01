@@ -7,6 +7,8 @@ Usage:
     python examples/pagination.py
 """
 
+from __future__ import annotations
+
 import os
 import time
 
@@ -38,13 +40,18 @@ def fetch_all_members() -> list[dict]:
         data = resp.json()
 
         members = data.get("members", [])
-        total = data.get("meta", {}).get("total", 0)
+        total = data.get("meta", {}).get("total", None)
         all_members.extend(members)
 
-        print(f"  Fetched {len(all_members)}/{total} members...")
+        total_str = str(total) if total is not None else "?"
+        print(f"  Fetched {len(all_members)}/{total_str} members...")
 
-        # Stop when we've got everything or no more results
-        if len(members) < limit or len(all_members) >= total:
+        # Stop when we get fewer results than requested (last page)
+        if len(members) < limit:
+            break
+
+        # Also stop if we know the total and have reached it
+        if total is not None and len(all_members) >= total:
             break
 
         offset += limit
