@@ -64,6 +64,35 @@ Several fields were renamed in the live API compared to the spec:
 | `canBeRefunded` | `isStillRefundable` | Attendee |
 | `privacy` (single object) | `directory` / `staff` / `highlight` | Member |
 
+## Updating Member Groups: PUT Only, Objects Only
+
+To update a member's groups, you **must** use `PUT /member/{id}` (not PATCH). The `groups` field is rejected by PATCH with a 422 "not allowed" error.
+
+The `groups` field must be an **array of objects** with at least `id`, `name`, and `color`. Sending an array of ID strings returns 422 ("must be of type object").
+
+```python
+# WORKS — PUT with group objects
+client._request("PUT", f"/member/{member_id}", json={
+    "firstName": member["firstName"],
+    "lastName": member["lastName"],
+    "gender": member["gender"],
+    "groups": [
+        {"id": "abc123", "name": "Pickleball", "color": "#cc0c98"},
+        {"id": "def456", "name": "Badminton", "color": "#ff0000"},
+    ],
+})
+
+# FAILS (422) — PATCH with groups
+client._request("PATCH", f"/member/{member_id}", json={"groups": [...]})
+
+# FAILS (422) — PUT with ID strings
+client._request("PUT", f"/member/{member_id}", json={"groups": ["abc123"]})
+```
+
+> **Note:** PUT requires `firstName`, `lastName`, and `gender` as mandatory fields. GET the member first to preserve existing values.
+
+> **Tested:** Mar 2026. Round-trip verified (add group → confirm → remove → confirm).
+
 ## Address Format Change
 
 The spec documents address fields as `streetNumber` + `streetName`, but the API returns:

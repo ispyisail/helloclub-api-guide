@@ -1,6 +1,6 @@
 # API Endpoints
 
-> **Tested:** Feb 2026 | **61 endpoint variations tested** | **17 endpoints working, 1 broken**
+> **Tested:** Mar 2026 | **67 endpoint variations tested** | **20 endpoints working, 1 broken**
 
 ## Endpoint Status
 
@@ -21,8 +21,8 @@
 | GET | `/member` | **Working** | Query members (many filter params) |
 | GET | `/member/{id}` | **Working** | Get single member |
 | POST | `/member` | **Working** | Create member |
-| PUT | `/member/{id}` | Documented | Full update member |
-| PATCH | `/member/{id}` | Documented | Partial update member |
+| PUT | `/member/{id}` | **Working** | Full update member (required: firstName, lastName, gender). Accepts `groups`. |
+| PATCH | `/member/{id}` | **Working** | Partial update member. Does **NOT** accept `groups` (returns 422). |
 
 ### Event Attendees
 
@@ -37,6 +37,16 @@
 |--------|------|--------|-------------|
 | GET | `/membership` | **Working** | Query all membership types |
 | GET | `/membership/{id}` | **Working** | Get single membership type |
+
+### Member Groups
+
+| Method | Path | Status | Description |
+|--------|------|--------|-------------|
+| GET | `/memberGroup` | **Working** | List all groups (returns `memberGroups` array). 19 groups found. |
+| GET | `/memberGroup/{id}` | **Working** | Get single group (name, color, isDynamic, ruleSets) |
+| PATCH | `/memberGroup/{id}` | **Working** | Update group properties (name, color). Does NOT manage members. |
+
+> **Not in official spec.** Discovered Mar 2026 during hc-group-fixer development.
 
 ### Other Endpoints
 
