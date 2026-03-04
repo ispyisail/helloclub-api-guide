@@ -158,3 +158,63 @@ The API is inconsistent with empty values:
 - The `guest` field on attendees is `null` for members, and `member` is `null` for guests
 
 Always check for both `null` and empty values when parsing.
+
+## Unstable Pagination with Non-Default Sort Orders
+
+**Severity: High** — causes silent data loss when paginating through members.
+
+Sorting `GET /member` by anything other than the default (`-lastOnline`) produces **duplicate records** across pages, causing other members to be silently skipped. The offset-based pagination appears to use an unstable sort, so the same member can appear at different offsets on subsequent pages.
+
+### Test Results (Mar 2026, 2,143 total members)
+
+| Sort | Records Returned | Unique Members | Duplicates | Missing Members |
+|------|----------------:|---------------:|-----------:|----------------:|
+| `-lastOnline` (default) | 2,143 | 2,115 | 28 | 0 |
+| `-updatedAt` | 2,143 | 1,423 | 720 | 697 |
+| `updatedAt` (ascending) | 2,143 | 1,060 | 1,083 | 1,060 |
+
+### How to Reproduce
+
+Fetch page 1 and page 2 with `sort=-updatedAt` and compare member IDs:
+
+```python
+page1 = client.get("/member", params={"limit": 100, "offset": 0, "sort": "-updatedAt"})
+page2 = client.get("/member", params={"limit": 100, "offset": 100, "sort": "-updatedAt"})
+
+ids_1 = {m["id"] for m in page1["members"]}
+ids_2 = {m["id"] for m in page2["members"]}
+
+overlap = ids_1 & ids_2
+print(f"Members on BOTH pages: {len(overlap)}")  # Expected: 0, Actual: 41
+```
+
+Adjacent pages share **41 out of 100** members. Some members appear up to **6 times** across the full result set, while ~700 members never appear at all.
+
+The same test with the default sort shows **0 overlap** — pagination is stable.
+
+### Impact
+
+Any code that paginates through all members using `sort=-updatedAt` (e.g., for incremental sync based on last-modified date) will:
+1. Miss ~33% of members entirely
+2. Process ~33% of members multiple times
+3. Return a "complete" result set that is actually incomplete
+
+### Workaround
+
+Use the default sort (`-lastOnline`) and deduplicate by member ID:
+
+```python
+members = {}
+offset = 0
+while True:
+    page = client.get("/member", params={"limit": 100, "offset": offset})
+    for m in page["members"]:
+        members[m["id"]] = m  # upsert — handles the rare default-sort duplicates
+    if len(page["members"]) < 100:
+        break
+    offset += 100
+```
+
+> **Note:** Even the default sort has ~28 duplicates out of 2,143 (1.3%), likely from members coming online during the paginated fetch. Always deduplicate by ID.
+
+> **Tested:** Mar 2026 against a club with 2,143 members. Test script: [`scripts/test_api_sort_bug.py`](https://github.com/ispyisail/hc-group-fixer/blob/master/scripts/test_api_sort_bug.py)
