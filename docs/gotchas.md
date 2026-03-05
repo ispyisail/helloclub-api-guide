@@ -2,9 +2,9 @@
 
 Common pitfalls when working with the Hello Club API, discovered through live testing.
 
-## Broken Endpoint: `/event/upcoming`
+## Removed Endpoint: `/event/upcoming`
 
-`GET /event/upcoming` returns `400 BadRequestError: "Invalid request"` for **all parameter combinations**. This endpoint appears to have been removed or disabled.
+`GET /event/upcoming` returns `400 BadRequestError: "Invalid request"` for **all parameter combinations**. Hello Club have confirmed this is not a bug — the endpoint has been removed, though it remains in the outdated OpenAPI spec. The same behaviour applies in V2.
 
 **Workaround:** Use `GET /event` with `fromDate` and `toDate`:
 
@@ -23,7 +23,7 @@ events = client.get("/event", params={
 
 ## Date-Required Endpoints (Spec Says Optional)
 
-The spec says `fromDate`/`toDate` are optional for these endpoints, but the API returns **422** without them:
+The spec says `fromDate`/`toDate` are optional for these endpoints, but the API returns **422** without them. Hello Club have confirmed this is intentional — the spec is outdated, not the API. The same behaviour applies in V2.
 
 - `GET /checkInLog` — returns 422 without dates
 - `GET /emailLog` — returns 422 without dates
@@ -163,7 +163,9 @@ Always check for both `null` and empty values when parsing.
 
 **Severity: High** — causes silent data loss when paginating through members.
 
-Sorting `GET /member` by anything other than the default (`-lastOnline`) produces **duplicate records** across pages, causing other members to be silently skipped. The offset-based pagination appears to use an unstable sort, so the same member can appear at different offsets on subsequent pages.
+Sorting `GET /member` by anything other than the default (`-lastOnline`) produces **duplicate records** across pages, causing other members to be silently skipped. The offset-based pagination uses an unstable sort when records share the same sort value, so the same member can appear at different offsets on subsequent pages.
+
+**Root cause (confirmed by Hello Club, Mar 2026):** The sort is unstable when multiple records share the same value for the sort field. To ensure stable sorting, append `,id` to your sort specifier (e.g. `sort=-updatedAt,id`). Hello Club may change the API to do this automatically in future.
 
 ### Test Results (Mar 2026, 2,143 total members)
 
@@ -201,7 +203,18 @@ Any code that paginates through all members using `sort=-updatedAt` (e.g., for i
 
 ### Workaround
 
-**Official recommendation (from Hello Club support, Mar 2026):** For incremental sync, filter by `updatedAt` instead of sorting by it. This avoids the unstable pagination entirely:
+**Fix (confirmed by Hello Club, Mar 2026):** Append `,id` to your sort to make pagination stable:
+
+```python
+# Stable sort — no duplicates or missing records
+page = client.get("/member", params={
+    "limit": 100,
+    "offset": 0,
+    "sort": "-updatedAt,id",  # id tiebreaker ensures stable ordering
+})
+```
+
+**For incremental sync**, Hello Club also recommends filtering by `updatedAt` instead of sorting by it:
 
 ```python
 # Fetch only members updated since your last sync
