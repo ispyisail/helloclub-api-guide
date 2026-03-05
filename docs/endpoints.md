@@ -1,6 +1,6 @@
 # API Endpoints
 
-> **Tested:** Mar 2026 | **67 endpoint variations tested** | **20 endpoints working, 1 broken**
+> **Tested:** Mar 2026 | **67 endpoint variations tested** | **20 endpoints working, 1 removed**
 
 ## Endpoint Status
 
@@ -9,7 +9,7 @@
 | Method | Path | Status | Description |
 |--------|------|--------|-------------|
 | GET | `/event` | **Working** | Query events (supports fromDate, toDate, many filters) |
-| GET | `/event/upcoming` | **Broken (400)** | Returns 400 for all params. Use `/event` with date range. |
+| GET | `/event/upcoming` | **Removed** | Returns 400. Confirmed removed by Hello Club — use `/event` with date range. |
 | GET | `/event/{id}` | **Working** | Get single event by ID |
 | POST | `/event` | Documented | Create event |
 | DELETE | `/event/{id}` | Documented | Delete event |
@@ -88,7 +88,7 @@ These parameters are supported across most GET list endpoints:
 |-----------|------|-------------|
 | `limit` | integer (0-100) | Results per page (default: 100) |
 | `offset` | integer | Pagination offset |
-| `sort` | string | Sort field (prefix `-` for descending, e.g. `-startDate`) |
+| `sort` | string | Sort field (prefix `-` for descending, e.g. `-startDate`). **Append `,id` for stable pagination** (e.g. `-updatedAt,id`). |
 | `fields` | string | Comma-separated field list to restrict response |
 | `search` | string | Free text search |
 
@@ -106,7 +106,7 @@ These parameters are supported across most GET list endpoints:
 |-----------|------|-------------|
 | `membership` | string | Filter by membership type ID |
 | `group` | string | Filter by group ID |
-| `updatedAt` | ISO 8601 | Filter by last update date |
+| `updatedAt` | ISO 8601 | Filter members updated since this date (recommended for incremental sync) |
 
 ### Event Attendee Parameters
 
@@ -132,7 +132,7 @@ These parameters are supported across most GET list endpoints:
 | `fromDate` | ISO 8601 | **Required** — start date for log range |
 | `toDate` | ISO 8601 | **Required** — end date for log range |
 
-> **Note:** The spec says `fromDate`/`toDate` are optional for checkInLog and emailLog, but the API returns 422 without them.
+> **Note:** The spec says `fromDate`/`toDate` are optional for checkInLog and emailLog, but the API returns 422 without them. Hello Club have confirmed this is intentional (the spec is outdated). Same behaviour in V2.
 
 ## Response Structure
 
