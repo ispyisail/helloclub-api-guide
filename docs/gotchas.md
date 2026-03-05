@@ -201,7 +201,27 @@ Any code that paginates through all members using `sort=-updatedAt` (e.g., for i
 
 ### Workaround
 
-Use the default sort (`-lastOnline`) and deduplicate by member ID:
+**Official recommendation (from Hello Club support, Mar 2026):** For incremental sync, filter by `updatedAt` instead of sorting by it. This avoids the unstable pagination entirely:
+
+```python
+# Fetch only members updated since your last sync
+last_sync = "2026-03-01T00:00:00Z"  # store and update this after each sync
+members = {}
+offset = 0
+while True:
+    page = client.get("/member", params={
+        "limit": 100,
+        "offset": offset,
+        "updatedAt": last_sync,
+    })
+    for m in page["members"]:
+        members[m["id"]] = m
+    if len(page["members"]) < 100:
+        break
+    offset += 100
+```
+
+**For full dataset fetches**, use the default sort (`-lastOnline`) and deduplicate by member ID:
 
 ```python
 members = {}
