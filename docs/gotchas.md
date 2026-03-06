@@ -2,6 +2,24 @@
 
 Common pitfalls when working with the Hello Club API, discovered through live testing. Items marked **Verified** have been confirmed against the live API and corroborated by Hello Club support (Mar 2026).
 
+## Data Retention Limits
+
+**Verified.** The API does not return historical data indefinitely for all entity types. Core entities (members, events, bookings, transactions) appear to be retained since club creation, but **log endpoints are capped at approximately 2.5–3 years** of history, regardless of the `fromDate` parameter.
+
+Tested Mar 2026 with `fromDate=2015-01-01` against a club created in Jun 2019:
+
+| Entity | Endpoint | Earliest Record | Retention |
+|--------|----------|----------------|-----------|
+| Members | `/member` | Jun 2019 | **All time** (since club creation) |
+| Events | `/event` | Jul 2019 | **All time** |
+| Bookings | `/booking` | Jun 2019 | **All time** |
+| Transactions | `/transaction` | Aug 2019 | **All time** |
+| Access logs | `/accessLog` | Mar 2023 | **~3 years** |
+| Activity logs | `/activityLog` | Mar 2023 | **~3 years** |
+| Audit logs | `/auditLog` | Jul 2023 | **~2.5 years** |
+| Check-in logs | `/checkInLog` | Jul 2023 | **~2.5 years** |
+| Email logs | `/emailLog` | Jul 2023 | **~2.5 years** |
+
 ## Removed Endpoint: `/event/upcoming`
 
 **Verified.** `GET /event/upcoming` returns `400 BadRequestError: "Invalid request"` for all parameter combinations. Hello Club have confirmed this is not a bug — the endpoint has been removed, though it remains in the outdated OpenAPI spec. The same behaviour applies in V2.
