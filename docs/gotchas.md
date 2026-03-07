@@ -107,9 +107,61 @@ client._request("PATCH", f"/member/{member_id}", json={"groups": [...]})
 client._request("PUT", f"/member/{member_id}", json={"groups": ["abc123"]})
 ```
 
-> **Note:** PUT requires `firstName`, `lastName`, and `gender` as mandatory fields. GET the member first to preserve existing values.
+> **Note:** PUT requires `firstName`, `lastName`, and `gender` as mandatory fields. GET the member first to preserve existing values. The `color` field on each group object **cannot be empty** — an empty string returns 422 (`string.empty`). Always use the color value from the group definition (`GET /memberGroup`) or from the member's existing groups.
 
 > **Tested:** Mar 2026. Round-trip verified (add group → confirm → remove → confirm).
+
+
+## Dynamic (Smart) Groups Silently Ignore Manual Updates
+
+**Verified.** Member groups with `isDynamic: true` (visible in `GET /memberGroup`) have their membership computed automatically from `ruleSets`. Attempting to add or remove a dynamic group via `PUT /member/{id}` will:
+
+1. Return **200 OK** with the group included in the response body
+2. **Not persist the change** — subsequent GET requests may still show the group (cached), but the Hello Club UI will not reflect it, and the membership will revert on the next rule evaluation
+
+This is a **silent data loss trap** — the API gives every indication of success.
+
+### How to Detect
+
+Check `isDynamic` on the group definition before attempting updates:
+
+```python
+groups = client.get("/memberGroup", params={"limit": 100}).json()
+dynamic_ids = {
+    g["id"] for g in groups.get("memberGroups", [])
+    if g.get("isDynamic")
+}
+
+# Before updating a member's groups, filter out dynamic ones
+if target_group_id in dynamic_ids:
+    print("Cannot manually assign members to dynamic group")
+```
+
+### Dynamic Group Structure
+
+```json
+{
+  "name": "Badminton All",
+  "color": "#ffb300",
+  "isDynamic": true,
+  "ruleSets": [
+    {
+      "rules": [
+        {
+          "type": "group",
+          "condition": "oneOf",
+          "prop": "groups",
+          "value": ["group-id-1", "group-id-2", "group-id-3"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+Dynamic groups do not appear in the member profile group checkboxes in the Hello Club admin UI — they are managed entirely by rules.
+
+> **Tested:** Mar 2026. PUT returned 200 with group present in response, but group was not visible in Hello Club UI and did not persist. Confirmed across 611 member updates.
 
 ## Address Format Change
 
