@@ -65,6 +65,7 @@ See [Authentication](docs/authentication.md) for how to get your API key from th
 | [Rate Limiting](docs/rate-limiting.md) | 30 req/min limit, 429 handling, retry strategy |
 | [V2 Migration](docs/v2-migration.md) | V2 transition guide with side-by-side comparison |
 | [Gotchas](docs/gotchas.md) | Broken endpoints, spec vs reality, known issues |
+| [ESP32 Guide](docs/esp32-guide.md) | TLS certs, RAM management, and working example for embedded use |
 
 ## Field Reference
 
